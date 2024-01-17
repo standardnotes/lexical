@@ -553,8 +553,16 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             );
             selection.style = anchorNode.getStyle();
           }
-          const selectedText = selection.anchor.getNode().getTextContent();
-          if (selectedText.length <= 1) {
+          const selectedNodeText = selection.anchor.getNode().getTextContent();
+          const isSelectedNodeTextOneOrLessCharacters =
+            selectedNodeText.length <= 1;
+          const hasSelectedAllTextInNode =
+            selection.anchor.offset === 0 &&
+            selection.focus.offset === selectedNodeText.length;
+          if (
+            isSelectedNodeTextOneOrLessCharacters ||
+            hasSelectedAllTextInNode
+          ) {
             event.preventDefault();
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
