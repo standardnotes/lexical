@@ -52,31 +52,18 @@ function $isSelectingEmptyListItem(
   );
 }
 
-function $getListItemValue(listItem: ListItemNode): number {
-  const list = listItem.getParent();
-
-  let value = 1;
-
-  if (list != null) {
-    if (!$isListNode(list)) {
-      invariant(
-        false,
-        '$getListItemValue: list node is not parent of list item node',
-      );
-    } else {
-      value = list.getStart();
+function $getListItemValues(list: ListNode): Map<string, number> {
+  let value = list.getStart();
+  const keyToValue = new Map();
+  for (const child of list.getChildren()) {
+    if ($isListItemNode(child)) {
+      keyToValue.set(child.getKey(), value);
+      if (!$isListNode(child.getFirstChild())) {
+        value++;
+      }
     }
   }
-
-  const siblings = listItem.getPreviousSiblings();
-  for (let i = 0; i < siblings.length; i++) {
-    const sibling = siblings[i];
-
-    if ($isListItemNode(sibling) && !$isListNode(sibling.getFirstChild())) {
-      value++;
-    }
-  }
-  return value;
+  return keyToValue;
 }
 
 /**
@@ -327,12 +314,16 @@ export function updateChildrenListItemValue(
 ): void {
   const childrenOrExisting = children || list.getChildren();
   if (childrenOrExisting !== undefined) {
+    const keyValueMap = $getListItemValues(list);
     for (let i = 0; i < childrenOrExisting.length; i++) {
       const child = childrenOrExisting[i];
       if ($isListItemNode(child)) {
         const prevValue = child.getValue();
-        const nextValue = $getListItemValue(child);
-
+        const nextValue = keyValueMap.get(child.getKey());
+        invariant(
+          nextValue !== undefined,
+          'updateChildrenListItemValue: list node is not parent of list item node',
+        );
         if (prevValue !== nextValue) {
           child.setValue(nextValue);
         }
