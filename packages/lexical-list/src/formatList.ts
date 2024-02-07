@@ -52,20 +52,6 @@ function $isSelectingEmptyListItem(
   );
 }
 
-function $getListItemValues(list: ListNode): Map<string, number> {
-  let value = list.getStart();
-  const keyToValue = new Map();
-  for (const child of list.getChildren()) {
-    if ($isListItemNode(child)) {
-      keyToValue.set(child.getKey(), value);
-      if (!$isListNode(child.getFirstChild())) {
-        value++;
-      }
-    }
-  }
-  return keyToValue;
-}
-
 /**
  * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
  * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
@@ -308,25 +294,19 @@ export function removeList(editor: LexicalEditor): void {
  * @param list - The list whose children are updated.
  * @param children - An array of the children to be updated.
  */
-export function updateChildrenListItemValue(
-  list: ListNode,
-  children?: Array<LexicalNode>,
-): void {
-  const childrenOrExisting = children || list.getChildren();
-  if (childrenOrExisting !== undefined) {
-    const keyValueMap = $getListItemValues(list);
-    for (let i = 0; i < childrenOrExisting.length; i++) {
-      const child = childrenOrExisting[i];
-      if ($isListItemNode(child)) {
-        const prevValue = child.getValue();
-        const nextValue = keyValueMap.get(child.getKey());
-        invariant(
-          nextValue !== undefined,
-          'updateChildrenListItemValue: list node is not parent of list item node',
-        );
-        if (prevValue !== nextValue) {
-          child.setValue(nextValue);
-        }
+export function updateChildrenListItemValue(list: ListNode): void {
+  const isNotChecklist = list.getListType() !== 'check';
+  let value = list.getStart();
+  for (const child of list.getChildren()) {
+    if ($isListItemNode(child)) {
+      if (child.getValue() !== value) {
+        child.setValue(value);
+      }
+      if (isNotChecklist && child.getChecked() != null) {
+        child.setChecked(undefined);
+      }
+      if (!$isListNode(child.getFirstChild())) {
+        value++;
       }
     }
   }
