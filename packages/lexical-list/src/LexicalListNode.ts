@@ -203,7 +203,6 @@ export class ListNode extends ElementNode {
         super.append(listItemNode);
       }
     }
-    updateChildrenListItemValue(this);
     return this;
   }
 

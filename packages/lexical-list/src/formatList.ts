@@ -120,7 +120,6 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
                   const newListNode = $createListNode(listType);
                   append(newListNode, parent.getChildren());
                   parent.replace(newListNode);
-                  updateChildrenListItemValue(newListNode);
                   handled.add(parentKey);
                 }
 
@@ -187,7 +186,6 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
     const list = $createListNode(listType);
     list.append(listItem);
     node.replace(list);
-    updateChildrenListItemValue(list);
     return list;
   }
 }
@@ -215,7 +213,6 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
   const toMerge = list2.getChildren();
   if (toMerge.length > 0) {
     list1.append(...toMerge);
-    updateChildrenListItemValue(list1);
   }
 
   list2.remove();
@@ -289,10 +286,9 @@ export function removeList(editor: LexicalEditor): void {
 
 /**
  * Takes the value of a child ListItemNode and makes it the value the ListItemNode
- * should be if it isn't already. If only certain children should be updated, they
- * can be passed optionally in an array.
+ * should be if it isn't already. Also ensures that checked is undefined if the
+ * parent does not have a list type of 'check'.
  * @param list - The list whose children are updated.
- * @param children - An array of the children to be updated.
  */
 export function updateChildrenListItemValue(list: ListNode): void {
   const isNotChecklist = list.getListType() !== 'check';
@@ -348,7 +344,6 @@ export function $handleIndent(listItemNode: ListItemNode): void {
         nextSibling.remove();
         removed.add(nextSibling.getKey());
       }
-      updateChildrenListItemValue(innerList);
     }
   } else if (isNestedListNode(nextSibling)) {
     // if the ListItemNode is next to a nested ListNode, merge them
@@ -360,14 +355,12 @@ export function $handleIndent(listItemNode: ListItemNode): void {
       if (firstChild !== null) {
         firstChild.insertBefore(listItemNode);
       }
-      updateChildrenListItemValue(innerList);
     }
   } else if (isNestedListNode(previousSibling)) {
     const innerList = previousSibling.getFirstChild();
 
     if ($isListNode(innerList)) {
       innerList.append(listItemNode);
-      updateChildrenListItemValue(innerList);
     }
   } else {
     // otherwise, we need to create a new nested ListNode
@@ -385,12 +378,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
       } else {
         parent.append(newListItem);
       }
-      updateChildrenListItemValue(newList);
     }
-  }
-
-  if ($isListNode(parent)) {
-    updateChildrenListItemValue(parent);
   }
 }
 
@@ -456,8 +444,6 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       // replace the grandparent list item (now between the siblings) with the outdented list item.
       grandparentListItem.replace(listItemNode);
     }
-    updateChildrenListItemValue(parentList);
-    updateChildrenListItemValue(greatGrandparentList);
   }
 }
 

@@ -221,6 +221,8 @@ export class ListItemNode extends ElementNode {
       return super.insertAfter(node, restoreSelection);
     }
 
+    const siblings = this.getNextSiblings();
+
     // Attempt to merge if the list is of the same type.
 
     if ($isListNode(node)) {
