@@ -14,6 +14,7 @@ import type {TextNode} from './nodes/LexicalTextNode';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_ANDROID,
+  IS_ANDROID_CHROME,
   IS_APPLE_WEBKIT,
   IS_FIREFOX,
   IS_IOS,
@@ -550,10 +551,13 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           $setCompositionKey(selection.anchor.key);
         }
 
+        const isSelectionAnchorSameAsFocus =
+          selection.anchor.key === selection.focus.key;
+
         if (
           isPossiblyAndroidKeyPress(event.timeStamp) &&
           editor.isComposing() &&
-          selection.anchor.key === selection.focus.key
+          isSelectionAnchorSameAsFocus
         ) {
           $setCompositionKey(null);
           lastKeyDownTimeStamp = 0;
@@ -589,7 +593,15 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         } else {
           $setCompositionKey(null);
           event.preventDefault();
-          dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+          // Chromium Android at the moment seems to ignore the preventDefault
+          // on 'deleteContentBackward' and still deletes the content. Which leads
+          // to multiple deletions, especially when handling replacement from keyboard
+          // suggestions. So we let the browser handle the deletion in this case.
+          const shouldLetBrowserHandleDelete =
+            IS_ANDROID_CHROME && isSelectionAnchorSameAsFocus;
+          if (!shouldLetBrowserHandleDelete) {
+            dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+          }
         }
         return;
       }
