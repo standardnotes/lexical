@@ -238,8 +238,6 @@ export class ListItemNode extends ElementNode {
       return child;
     }
 
-    const siblings = this.getNextSiblings();
-
     // Otherwise, split the list
     // Split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
