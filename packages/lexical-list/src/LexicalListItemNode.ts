@@ -37,6 +37,7 @@ import {
   LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
@@ -174,7 +175,9 @@ export class ListItemNode extends ElementNode {
     }
     this.setIndent(0);
     const list = this.getParentOrThrow();
-    if (!$isListNode(list)) return replaceWithNode;
+    if (!$isListNode(list)) {
+      return replaceWithNode;
+    }
     if (list.__first === this.getKey()) {
       list.insertBefore(replaceWithNode);
     } else if (list.__last === this.getKey()) {
@@ -434,8 +437,7 @@ function $setListItemThemeClassNames(
   }
 
   if (listItemClassName !== undefined) {
-    const listItemClasses = listItemClassName.split(' ');
-    classesToAdd.push(...listItemClasses);
+    classesToAdd.push(...normalizeClassNames(listItemClassName));
   }
 
   if (listTheme) {
@@ -460,7 +462,7 @@ function $setListItemThemeClassNames(
   }
 
   if (nestedListItemClassName !== undefined) {
-    const nestedListItemClasses = nestedListItemClassName.split(' ');
+    const nestedListItemClasses = normalizeClassNames(nestedListItemClassName);
 
     if (node.getChildren().some((child) => $isListNode(child))) {
       classesToAdd.push(...nestedListItemClasses);

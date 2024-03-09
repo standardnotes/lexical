@@ -111,11 +111,6 @@ export class TableNode extends ElementNode {
     };
   }
 
-  // TODO 0.10 deprecate
-  canExtractContents(): false {
-    return false;
-  }
-
   canBeEmpty(): false {
     return false;
   }
@@ -138,7 +133,9 @@ export class TableNode extends ElementNode {
       }
 
       const x = row.findIndex((cell) => {
-        if (!cell) return;
+        if (!cell) {
+          return;
+        }
         const {elem} = cell;
         const cellNode = $getNearestNodeFromDOMNode(elem);
         return cellNode === tableCellNode;

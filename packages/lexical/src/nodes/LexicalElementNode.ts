@@ -147,29 +147,23 @@ export class ElementNode extends LexicalNode {
   }
   getFirstDescendant<T extends LexicalNode>(): null | T {
     let node = this.getFirstChild<T>();
-    while (node !== null) {
-      if ($isElementNode(node)) {
-        const child = node.getFirstChild<T>();
-        if (child !== null) {
-          node = child;
-          continue;
-        }
+    while ($isElementNode(node)) {
+      const child = node.getFirstChild<T>();
+      if (child === null) {
+        break;
       }
-      break;
+      node = child;
     }
     return node;
   }
   getLastDescendant<T extends LexicalNode>(): null | T {
     let node = this.getLastChild<T>();
-    while (node !== null) {
-      if ($isElementNode(node)) {
-        const child = node.getLastChild<T>();
-        if (child !== null) {
-          node = child;
-          continue;
-        }
+    while ($isElementNode(node)) {
+      const child = node.getLastChild<T>();
+      if (child === null) {
+        break;
       }
-      break;
+      node = child;
     }
     return node;
   }
@@ -530,10 +524,6 @@ export class ElementNode extends LexicalNode {
   }
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
-  }
-  // TODO 0.10 deprecate
-  canExtractContents(): boolean {
-    return true;
   }
   canReplaceWith(replacement: LexicalNode): boolean {
     return true;
