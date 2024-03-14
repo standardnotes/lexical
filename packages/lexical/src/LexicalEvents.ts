@@ -13,7 +13,6 @@ import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
   CAN_USE_BEFORE_INPUT,
-  IS_ANDROID,
   IS_ANDROID_CHROME,
   IS_APPLE_WEBKIT,
   IS_FIREFOX,
@@ -546,11 +545,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       }
 
       if ($isRangeSelection(selection)) {
-        // Used for handling backspace in Android.
-        if (IS_ANDROID) {
-          $setCompositionKey(selection.anchor.key);
-        }
-
         const isSelectionAnchorSameAsFocus =
           selection.anchor.key === selection.focus.key;
 
@@ -577,28 +571,20 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             );
             selection.style = anchorNode.getStyle();
           }
-          const selectedNodeText = selection.anchor.getNode().getTextContent();
-          const isSelectedNodeTextOneOrLessCharacters =
-            selectedNodeText.length <= 1;
-          const hasSelectedAllTextInNode =
-            selection.anchor.offset === 0 &&
-            selection.focus.offset === selectedNodeText.length;
-          if (
-            isSelectedNodeTextOneOrLessCharacters ||
-            hasSelectedAllTextInNode
-          ) {
-            event.preventDefault();
-            dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
-          }
         } else {
           $setCompositionKey(null);
           event.preventDefault();
           // Chromium Android at the moment seems to ignore the preventDefault
           // on 'deleteContentBackward' and still deletes the content. Which leads
-          // to multiple deletions, especially when handling replacement from keyboard
-          // suggestions. So we let the browser handle the deletion in this case.
+          // to multiple deletions. So we let the browser handle the deletion in this case.
+          const selectedNodeText = selection.anchor.getNode().getTextContent();
+          const hasSelectedAllTextInNode =
+            selection.anchor.offset === 0 &&
+            selection.focus.offset === selectedNodeText.length;
           const shouldLetBrowserHandleDelete =
-            IS_ANDROID_CHROME && isSelectionAnchorSameAsFocus;
+            IS_ANDROID_CHROME &&
+            isSelectionAnchorSameAsFocus &&
+            !hasSelectedAllTextInNode;
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
