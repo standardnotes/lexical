@@ -9,11 +9,13 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.13.1",
+  "version": "0.14.2",
   "main": "Lexical.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical"
-  }
+  },
+  "module": "Lexical.mjs",
+  "sideEffects": false
 }

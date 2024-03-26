@@ -8,17 +8,19 @@
     "link"
   ],
   "license": "MIT",
-  "version": "0.13.1",
+  "version": "0.14.2",
   "main": "LexicalLink.js",
   "peerDependencies": {
-    "lexical": "0.13.1"
+    "lexical": "0.14.2"
   },
   "dependencies": {
-    "@lexical/utils": "0.13.1"
+    "@lexical/utils": "0.14.2"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-link"
-  }
+  },
+  "module": "LexicalLink.mjs",
+  "sideEffects": false
 }
