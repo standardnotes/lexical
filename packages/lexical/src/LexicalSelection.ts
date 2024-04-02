@@ -822,7 +822,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
 
-    if (selectedNodesLength === 1 && anchor.key === focus.key) {
+    if (selectedNodesLength === 1) {
       if (firstNode.isToken()) {
         const textNode = $createTextNode(text);
         textNode.select();
@@ -1926,6 +1926,10 @@ function internalResolveSelectionPoint(
         return null;
       }
       if ($isElementNode(resolvedElement)) {
+        resolvedOffset = Math.min(
+          resolvedElement.getChildrenSize(),
+          resolvedOffset,
+        );
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
           $isElementNode(child) &&
@@ -2199,6 +2203,13 @@ export function internalCreateSelection(
     );
   }
   return lastSelection.clone();
+}
+
+export function $createRangeSelectionFromDom(
+  domSelection: Selection | null,
+  editor: LexicalEditor,
+): null | RangeSelection {
+  return internalCreateRangeSelection(null, domSelection, editor, null);
 }
 
 export function internalCreateRangeSelection(

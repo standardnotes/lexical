@@ -26,6 +26,7 @@ export type {
   NodeMutation,
   SerializedEditor,
   Spread,
+  Transform,
 } from './LexicalEditor';
 export type {EditorState, SerializedEditorState} from './LexicalEditorState';
 export type {
@@ -123,6 +124,7 @@ export {
   $createNodeSelection,
   $createPoint,
   $createRangeSelection,
+  $createRangeSelectionFromDom,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
