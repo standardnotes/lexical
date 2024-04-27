@@ -17,6 +17,8 @@ import type {
   TabNode,
 } from 'lexical';
 
+import './CodeHighlighterPrism';
+
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -28,7 +30,6 @@ import {
   TextNode,
 } from 'lexical';
 
-import {Prism} from './CodeHighlighterPrism';
 import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -51,6 +52,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   markdown: 'Markdown',
   objc: 'Objective-C',
   plain: 'Plain Text',
+  powershell: 'PowerShell',
   py: 'Python',
   rust: 'Rust',
   sql: 'SQL',
@@ -82,11 +84,11 @@ export function getLanguageFriendlyName(lang: string) {
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
 export const getCodeLanguages = (): Array<string> =>
-  Object.keys(Prism.languages)
+  Object.keys(window.Prism.languages)
     .filter(
       // Prism has several language helpers mixed into languages object
       // so filtering them out here to get langs list
-      (language) => typeof Prism.languages[language] !== 'function',
+      (language) => typeof window.Prism.languages[language] !== 'function',
     )
     .sort();
 

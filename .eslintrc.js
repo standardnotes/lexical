@@ -51,6 +51,8 @@ module.exports = {
       // node scripts should be console logging so don't lint against that
       files: ['scripts/**/*.js'],
       rules: {
+        // https://github.com/Stuk/eslint-plugin-header/issues/39
+        'header/header': OFF,
         'no-console': OFF,
       },
     },
@@ -74,13 +76,6 @@ module.exports = {
         '@typescript-eslint/no-this-alias': OFF,
         '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
         'header/header': [2, 'scripts/www/headerTemplate.js'],
-      },
-    },
-    {
-      // don't lint headers in entrypoint files so we can add TypeDoc module comments
-      files: ['packages/**/src/index.ts'],
-      rules: {
-        'header/header': OFF,
       },
     },
     {
@@ -133,7 +128,6 @@ module.exports = {
   rules: {
     'accessor-pairs': OFF,
 
-    'brace-style': [ERROR, '1tbs'],
     'consistent-return': OFF,
     curly: [ERROR, 'all'],
     'dot-location': [ERROR, 'property'],
@@ -221,7 +215,8 @@ module.exports = {
 
     'react/jsx-tag-spacing': ERROR,
 
-    'react/jsx-uses-react': ERROR,
+    // This hasn't been necessary since React 17
+    'react/jsx-uses-react': OFF,
 
     // We don't care to do this
     'react/jsx-wrap-multilines': [
@@ -231,8 +226,8 @@ module.exports = {
 
     'react/no-is-mounted': OFF,
 
-    // This isn't useful in our test code
-    'react/react-in-jsx-scope': ERROR,
+    // This hasn't been necessary since React 17
+    'react/react-in-jsx-scope': OFF,
 
     'react/self-closing-comp': ERROR,
 
