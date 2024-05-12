@@ -49,10 +49,10 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
+  $internalMakeRangeSelection,
   $isRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
-  internalMakeRangeSelection,
 } from '../LexicalSelection';
 import {errorOnReadOnly} from '../LexicalUpdates';
 import {
@@ -62,6 +62,7 @@ import {
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
   isHTMLElement,
+  isInlineDomNode,
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
@@ -543,7 +544,7 @@ export class TextNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       '#text': () => ({
-        conversion: convertTextDOMNode,
+        conversion: $convertTextDOMNode,
         priority: 0,
       }),
       b: () => ({
@@ -794,7 +795,7 @@ export class TextNode extends LexicalNode {
       focusOffset = 0;
     }
     if (!$isRangeSelection(selection)) {
-      return internalMakeRangeSelection(
+      return $internalMakeRangeSelection(
         key,
         anchorOffset,
         key,
@@ -1091,45 +1092,9 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   // domNode is a <span> since we matched it by nodeName
   const span = domNode as HTMLSpanElement;
   const style = span.style;
-  const fontWeight = style.fontWeight;
-  const textDecoration = style.textDecoration.split(' ');
-  // Google Docs uses span tags + font-weight for bold text
-  const hasBoldFontWeight = fontWeight === '700' || fontWeight === 'bold';
-  // Google Docs uses span tags + text-decoration: line-through for strikethrough text
-  const hasLinethroughTextDecoration = textDecoration.includes('line-through');
-  // Google Docs uses span tags + font-style for italic text
-  const hasItalicFontStyle = style.fontStyle === 'italic';
-  // Google Docs uses span tags + text-decoration: underline for underline text
-  const hasUnderlineTextDecoration = textDecoration.includes('underline');
-  // Google Docs uses span tags + vertical-align to specify subscript and superscript
-  const verticalAlign = style.verticalAlign;
 
   return {
-    forChild: (lexicalNode) => {
-      if (!$isTextNode(lexicalNode)) {
-        return lexicalNode;
-      }
-      if (hasBoldFontWeight) {
-        lexicalNode.toggleFormat('bold');
-      }
-      if (hasLinethroughTextDecoration) {
-        lexicalNode.toggleFormat('strikethrough');
-      }
-      if (hasItalicFontStyle) {
-        lexicalNode.toggleFormat('italic');
-      }
-      if (hasUnderlineTextDecoration) {
-        lexicalNode.toggleFormat('underline');
-      }
-      if (verticalAlign === 'sub') {
-        lexicalNode.toggleFormat('subscript');
-      }
-      if (verticalAlign === 'super') {
-        lexicalNode.toggleFormat('superscript');
-      }
-
-      return lexicalNode;
-    },
+    forChild: applyTextFormatFromStyle(style),
     node: null,
   };
 }
@@ -1139,14 +1104,12 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   const b = domNode as HTMLElement;
   // Google Docs wraps all copied HTML in a <b> with font-weight normal
   const hasNormalFontWeight = b.style.fontWeight === 'normal';
-  return {
-    forChild: (lexicalNode) => {
-      if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
-        lexicalNode.toggleFormat('bold');
-      }
 
-      return lexicalNode;
-    },
+  return {
+    forChild: applyTextFormatFromStyle(
+      b.style,
+      hasNormalFontWeight ? undefined : 'bold',
+    ),
     node: null,
   };
 }
@@ -1182,7 +1145,7 @@ export function findParentPreDOMNode(node: Node) {
   return resultNode;
 }
 
-function convertTextDOMNode(domNode: Node): DOMConversionOutput {
+function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
   invariant(
@@ -1261,11 +1224,6 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
   return {node: $createTextNode(textContent)};
 }
 
-const inlineParents = new RegExp(
-  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/,
-  'i',
-);
-
 function findTextInLine(text: Text, forward: boolean): null | Text {
   let node: Node = text;
   // eslint-disable-next-line no-constant-condition
@@ -1284,7 +1242,7 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
     if (node.nodeType === DOM_ELEMENT_TYPE) {
       const display = (node as HTMLElement).style.display;
       if (
-        (display === '' && node.nodeName.match(inlineParents) === null) ||
+        (display === '' && !isInlineDomNode(node)) ||
         (display !== '' && !display.startsWith('inline'))
       ) {
         return null;
@@ -1319,13 +1277,7 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
     return {node: null};
   }
   return {
-    forChild: (lexicalNode) => {
-      if ($isTextNode(lexicalNode) && !lexicalNode.hasFormat(format)) {
-        lexicalNode.toggleFormat(format);
-      }
-
-      return lexicalNode;
-    },
+    forChild: applyTextFormatFromStyle((domNode as HTMLElement).style, format),
     node: null,
   };
 }
@@ -1338,4 +1290,55 @@ export function $isTextNode(
   node: LexicalNode | null | undefined,
 ): node is TextNode {
   return node instanceof TextNode;
+}
+
+function applyTextFormatFromStyle(
+  style: CSSStyleDeclaration,
+  shouldApply?: TextFormatType,
+) {
+  const fontWeight = style.fontWeight;
+  const textDecoration = style.textDecoration.split(' ');
+  // Google Docs uses span tags + font-weight for bold text
+  const hasBoldFontWeight = fontWeight === '700' || fontWeight === 'bold';
+  // Google Docs uses span tags + text-decoration: line-through for strikethrough text
+  const hasLinethroughTextDecoration = textDecoration.includes('line-through');
+  // Google Docs uses span tags + font-style for italic text
+  const hasItalicFontStyle = style.fontStyle === 'italic';
+  // Google Docs uses span tags + text-decoration: underline for underline text
+  const hasUnderlineTextDecoration = textDecoration.includes('underline');
+  // Google Docs uses span tags + vertical-align to specify subscript and superscript
+  const verticalAlign = style.verticalAlign;
+
+  return (lexicalNode: LexicalNode) => {
+    if (!$isTextNode(lexicalNode)) {
+      return lexicalNode;
+    }
+    if (hasBoldFontWeight && !lexicalNode.hasFormat('bold')) {
+      lexicalNode.toggleFormat('bold');
+    }
+    if (
+      hasLinethroughTextDecoration &&
+      !lexicalNode.hasFormat('strikethrough')
+    ) {
+      lexicalNode.toggleFormat('strikethrough');
+    }
+    if (hasItalicFontStyle && !lexicalNode.hasFormat('italic')) {
+      lexicalNode.toggleFormat('italic');
+    }
+    if (hasUnderlineTextDecoration && !lexicalNode.hasFormat('underline')) {
+      lexicalNode.toggleFormat('underline');
+    }
+    if (verticalAlign === 'sub' && !lexicalNode.hasFormat('subscript')) {
+      lexicalNode.toggleFormat('subscript');
+    }
+    if (verticalAlign === 'super' && !lexicalNode.hasFormat('superscript')) {
+      lexicalNode.toggleFormat('superscript');
+    }
+
+    if (shouldApply && !lexicalNode.hasFormat(shouldApply)) {
+      lexicalNode.toggleFormat(shouldApply);
+    }
+
+    return lexicalNode;
+  };
 }

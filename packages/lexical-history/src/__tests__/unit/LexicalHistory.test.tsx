@@ -34,12 +34,12 @@ import {
 } from 'lexical/src';
 import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
 import React from 'react';
-import {createRoot} from 'react-dom/client';
+import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 describe('LexicalHistory tests', () => {
   let container: HTMLDivElement | null = null;
-  let reactRoot;
+  let reactRoot: Root;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -128,8 +128,8 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph1 = createParagraphNode('AAA');
-        const paragraph2 = createParagraphNode('BBB');
+        const paragraph1 = $createParagraphNodeWithText('AAA');
+        const paragraph2 = $createParagraphNodeWithText('BBB');
 
         // The editor has one child that is an empty
         // paragraph Node.
@@ -223,7 +223,7 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph = createParagraphNode('foo');
+        const paragraph = $createParagraphNodeWithText('foo');
         root.append(paragraph);
       });
     });
@@ -261,7 +261,7 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph = createParagraphNode('foo');
+        const paragraph = $createParagraphNodeWithText('foo');
         root.append(paragraph);
       });
     });
@@ -315,7 +315,7 @@ describe('LexicalHistory tests', () => {
   });
 });
 
-const createParagraphNode = (text: string) => {
+const $createParagraphNodeWithText = (text: string) => {
   const paragraph = $createParagraphNode();
   const textNode = $createTextNode(text);
 

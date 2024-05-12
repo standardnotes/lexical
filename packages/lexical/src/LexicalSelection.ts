@@ -45,6 +45,7 @@ import {
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
+  $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
   $isTokenOrSegmented,
@@ -53,7 +54,6 @@ import {
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getNodeFromDOM,
   getTextNodeOffset,
   INTERNAL_$isBlock,
   isSelectionCapturedInDecoratorInput,
@@ -609,7 +609,7 @@ export class RangeSelection implements BaseSelection {
     const editor = getActiveEditor();
     const currentEditorState = editor.getEditorState();
     const lastSelection = currentEditorState._selection;
-    const resolvedSelectionPoints = internalResolveSelectionPoints(
+    const resolvedSelectionPoints = $internalResolveSelectionPoints(
       range.startContainer,
       range.startOffset,
       range.endContainer,
@@ -827,7 +827,7 @@ export class RangeSelection implements BaseSelection {
             !lastNodeParent.canInsertTextAfter()))
       ) {
         this.insertText('');
-        normalizeSelectionPointsForBoundaries(this.anchor, this.focus, null);
+        $normalizeSelectionPointsForBoundaries(this.anchor, this.focus, null);
         this.insertText(text);
         return;
       }
@@ -1224,7 +1224,7 @@ export class RangeSelection implements BaseSelection {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
-        const index = removeTextAndSplitBlock(this);
+        const index = $removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         last.selectEnd();
       }
@@ -1240,7 +1240,7 @@ export class RangeSelection implements BaseSelection {
         $isElementNode(firstBlock),
         "Expected 'firstBlock' to be an ElementNode",
       );
-      const index = removeTextAndSplitBlock(this);
+      const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
       last.selectEnd();
       return;
@@ -1311,7 +1311,7 @@ export class RangeSelection implements BaseSelection {
       paragraph.select();
       return paragraph;
     }
-    const index = removeTextAndSplitBlock(this);
+    const index = $removeTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     invariant($isElementNode(block), 'Expected ancestor to be an ElementNode');
     const firstToAppend = block.getChildAtIndex(index);
@@ -1892,7 +1892,7 @@ function shouldResolveAncestor(
   );
 }
 
-function internalResolveSelectionPoint(
+function $internalResolveSelectionPoint(
   dom: Node,
   offset: number,
   lastPoint: null | PointType,
@@ -1912,6 +1912,7 @@ function internalResolveSelectionPoint(
     // We use the anchor to find which child node to select
     const childNodes = dom.childNodes;
     const childNodesLength = childNodes.length;
+    const blockCursorElement = editor._blockCursorElement;
     // If the anchor is the same as length, then this means we
     // need to select the very last text node.
     if (resolvedOffset === childNodesLength) {
@@ -1920,18 +1921,27 @@ function internalResolveSelectionPoint(
     }
     let childDOM = childNodes[resolvedOffset];
     let hasBlockCursor = false;
-    if (childDOM === editor._blockCursorElement) {
+    if (childDOM === blockCursorElement) {
       childDOM = childNodes[resolvedOffset + 1];
       hasBlockCursor = true;
-    } else if (editor._blockCursorElement !== null) {
-      resolvedOffset--;
+    } else if (blockCursorElement !== null) {
+      const blockCursorElementParent = blockCursorElement.parentNode;
+      if (dom === blockCursorElementParent) {
+        const blockCursorOffset = Array.prototype.indexOf.call(
+          blockCursorElementParent.children,
+          blockCursorElement,
+        );
+        if (offset > blockCursorOffset) {
+          resolvedOffset--;
+        }
+      }
     }
-    resolvedNode = getNodeFromDOM(childDOM);
+    resolvedNode = $getNodeFromDOM(childDOM);
 
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else {
-      let resolvedElement = getNodeFromDOM(dom);
+      let resolvedElement = $getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.
       if (resolvedElement === null) {
         return null;
@@ -1977,7 +1987,7 @@ function internalResolveSelectionPoint(
         if (
           offset === 0 &&
           $isDecoratorNode(resolvedElement) &&
-          getNodeFromDOM(dom) === resolvedElement
+          $getNodeFromDOM(dom) === resolvedElement
         ) {
           resolvedOffset = index;
         } else {
@@ -1991,7 +2001,7 @@ function internalResolveSelectionPoint(
     }
   } else {
     // TextNode or null
-    resolvedNode = getNodeFromDOM(dom);
+    resolvedNode = $getNodeFromDOM(dom);
   }
   if (!$isTextNode(resolvedNode)) {
     return null;
@@ -2062,7 +2072,7 @@ function resolveSelectionPointOnBoundary(
   }
 }
 
-function normalizeSelectionPointsForBoundaries(
+function $normalizeSelectionPointsForBoundaries(
   anchor: PointType,
   focus: PointType,
   lastSelection: null | BaseSelection,
@@ -2101,7 +2111,7 @@ function normalizeSelectionPointsForBoundaries(
   }
 }
 
-function internalResolveSelectionPoints(
+function $internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
   focusDOM: null | Node,
@@ -2116,7 +2126,7 @@ function internalResolveSelectionPoints(
   ) {
     return null;
   }
-  const resolvedAnchorPoint = internalResolveSelectionPoint(
+  const resolvedAnchorPoint = $internalResolveSelectionPoint(
     anchorDOM,
     anchorOffset,
     $isRangeSelection(lastSelection) ? lastSelection.anchor : null,
@@ -2125,7 +2135,7 @@ function internalResolveSelectionPoints(
   if (resolvedAnchorPoint === null) {
     return null;
   }
-  const resolvedFocusPoint = internalResolveSelectionPoint(
+  const resolvedFocusPoint = $internalResolveSelectionPoint(
     focusDOM,
     focusOffset,
     $isRangeSelection(lastSelection) ? lastSelection.focus : null,
@@ -2138,8 +2148,8 @@ function internalResolveSelectionPoints(
     resolvedAnchorPoint.type === 'element' &&
     resolvedFocusPoint.type === 'element'
   ) {
-    const anchorNode = getNodeFromDOM(anchorDOM);
-    const focusNode = getNodeFromDOM(focusDOM);
+    const anchorNode = $getNodeFromDOM(anchorDOM);
+    const focusNode = $getNodeFromDOM(focusDOM);
     // Ensure if we're selecting the content of a decorator that we
     // return null for this point, as it's not in the controlled scope
     // of Lexical.
@@ -2149,7 +2159,7 @@ function internalResolveSelectionPoints(
   }
 
   // Handle normalization of selection when it is at the boundaries.
-  normalizeSelectionPointsForBoundaries(
+  $normalizeSelectionPointsForBoundaries(
     resolvedAnchorPoint,
     resolvedFocusPoint,
     lastSelection,
@@ -2168,7 +2178,7 @@ export function $isBlockElementNode(
 // selection is null, i.e. forcing selection on the editor
 // when it current exists outside the editor.
 
-export function internalMakeRangeSelection(
+export function $internalMakeRangeSelection(
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
@@ -2198,7 +2208,7 @@ export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
-export function internalCreateSelection(
+export function $internalCreateSelection(
   editor: LexicalEditor,
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
@@ -2206,7 +2216,7 @@ export function internalCreateSelection(
   const domSelection = getDOMSelection(editor._window);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
-    return internalCreateRangeSelection(
+    return $internalCreateRangeSelection(
       lastSelection,
       domSelection,
       editor,
@@ -2220,10 +2230,10 @@ export function $createRangeSelectionFromDom(
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
-  return internalCreateRangeSelection(null, domSelection, editor, null);
+  return $internalCreateRangeSelection(null, domSelection, editor, null);
 }
 
-export function internalCreateRangeSelection(
+export function $internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,
@@ -2283,7 +2293,7 @@ export function internalCreateRangeSelection(
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
   // native selection.
-  const resolvedSelectionPoints = internalResolveSelectionPoints(
+  const resolvedSelectionPoints = $internalResolveSelectionPoints(
     anchorDOM,
     anchorOffset,
     focusDOM,
@@ -2647,6 +2657,9 @@ export function updateDOMSelection(
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it
     // should happen.
+    if (__DEV__) {
+      console.warn(error);
+    }
   }
   if (
     !tags.has('skip-scroll-into-view') &&
@@ -2695,7 +2708,7 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
-function removeTextAndSplitBlock(selection: RangeSelection): number {
+function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
     selection_.removeText();
@@ -2717,13 +2730,13 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   let offset = anchor.offset;
 
   while (!INTERNAL_$isBlock(node)) {
-    [node, offset] = splitNodeAtPoint(node, offset);
+    [node, offset] = $splitNodeAtPoint(node, offset);
   }
 
   return offset;
 }
 
-function splitNodeAtPoint(
+function $splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
 ): [parent: ElementNode, offset: number] {

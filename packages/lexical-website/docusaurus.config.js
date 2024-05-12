@@ -12,7 +12,6 @@
 
 const {github: lightCodeTheme, dracula: darkCodeTheme} =
   require('prism-react-renderer').themes;
-const importPlugin = require('remark-import-partial');
 const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
 const {packagesManager} = require('../../scripts/shared/packagesManager');
 const path = require('node:path');
@@ -189,7 +188,7 @@ const docusaurusPluginTypedocConfig = {
     autoConfiguration: false,
     position: 5,
   },
-  tsconfig: '../../tsconfig.json',
+  tsconfig: '../../tsconfig.build.json',
   watch: process.env.TYPEDOC_WATCH === 'true',
 };
 
@@ -245,7 +244,7 @@ const config = {
           showReadingTime: true, // TODO: Update when directory finalized
         },
         docs: {
-          beforeDefaultRemarkPlugins: [importPlugin, slugifyPlugin],
+          beforeDefaultRemarkPlugins: [slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
           path: 'docs',
           sidebarItemsGenerator,
