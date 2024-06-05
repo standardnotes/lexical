@@ -9,7 +9,7 @@
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text';
@@ -35,7 +35,7 @@ import {
 import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
 import React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 describe('LexicalHistory tests', () => {
   let container: HTMLDivElement | null = null;

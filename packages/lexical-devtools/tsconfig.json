@@ -123,6 +123,9 @@
       "@lexical/react/LexicalTableOfContents": [
         "../lexical-react/src/LexicalTableOfContents.tsx"
       ],
+      "@lexical/react/LexicalTableOfContentsPlugin": [
+        "../lexical-react/src/LexicalTableOfContentsPlugin.tsx"
+      ],
       "@lexical/react/LexicalTablePlugin": [
         "../lexical-react/src/LexicalTablePlugin.ts"
       ],
@@ -158,6 +161,7 @@
       "shared/environment": ["../shared/src/environment.ts"],
       "shared/invariant": ["../shared/src/invariant.ts"],
       "shared/normalizeClassNames": ["../shared/src/normalizeClassNames.ts"],
+      "shared/react-test-utils": ["../shared/src/react-test-utils.ts"],
       "shared/simpleDiffWithCursor": ["../shared/src/simpleDiffWithCursor.ts"],
       "shared/useLayoutEffect": ["../shared/src/useLayoutEffect.ts"],
       "shared/warnOnlyOnce": ["../shared/src/warnOnlyOnce.ts"]
