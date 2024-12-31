@@ -129,6 +129,7 @@ export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
   editor: LexicalEditor,
+  event?: InputEvent,
 ): void {
   const lexicalString = dataTransfer.getData('application/x-lexical-editor');
 
@@ -147,18 +148,25 @@ export function $insertDataTransferForRichText(
     }
   }
 
-  const htmlString = dataTransfer.getData('text/html');
-  if (htmlString) {
-    try {
-      const parser = new DOMParser();
-      const dom = parser.parseFromString(
-        trustHTML(htmlString) as string,
-        'text/html',
-      );
-      const nodes = $generateNodesFromDOM(editor, dom);
-      return $insertGeneratedNodes(editor, nodes, selection);
-    } catch {
-      // Fail silently.
+  const shouldIgnoreHTML =
+    event &&
+    event.inputType === 'insertReplacementText' &&
+    dataTransfer.types.includes('text/plain');
+
+  if (!shouldIgnoreHTML) {
+    const htmlString = dataTransfer.getData('text/html');
+    if (htmlString) {
+      try {
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(
+          trustHTML(htmlString) as string,
+          'text/html',
+        );
+        const nodes = $generateNodesFromDOM(editor, dom);
+        return $insertGeneratedNodes(editor, nodes, selection);
+      } catch {
+        // Fail silently.
+      }
     }
   }
 
